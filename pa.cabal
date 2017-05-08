@@ -1,14 +1,20 @@
 name:                pa
 version:             0.1.0.0
--- synopsis:
--- description:
-homepage:            https://github.com/githubuser/pa#readme
-license:             BSD3
+
+description:         tools based on csound-expression for algorithmic composition, 
+                     sound design and production of electronic music. 
+                     all code is supposed to make making music easier for just myself,
+                     however everybody who wants to can use it and i try to keep core parts
+                     reasonably readable.
+
+synopsis:            my personal collection of audio tools for music production.
+homepage:            https://github.com/sebastianpfluegelmeier/pa.git
+license:             GPL-3
 license-file:        LICENSE
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2017 Author name here
-category:            Web
+author:              Sebastian Pfluegelmeier
+maintainer:          pfluegelmeier.s@gmx.at
+copyright:           2017 Sebastian Pfluegelmeier
+category:            Audio
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
