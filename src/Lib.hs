@@ -1,38 +1,41 @@
 module Lib
-    ( bass1
-    , mix1
+    ( uniOsc
+    , stereoWidth
+    , test
+    -- , mmel
     ) where
-
 import Csound.Base
+import Data.List (intersperse)
 
-bass1 :: D -> SE Sig
+uniOsc :: (Sig -> Sig) -> Sig -> Int -> Sig -> SE (Sig, Sig)
 
-bass1 freq = 
+uniOsc iosc detune voices freq = 
+    (\x y -> (x, y)) <$> side <*> side
+      where
+        side :: SE Sig
+        side = foldr1 (+) (replicate voices voice)
 
-    return $ setDur 10 $ env * filter (sosc freq) * 0.06
+        voice :: SE Sig
+        voice = fmap (\x -> iosc $ freq + expseg [10000, 0.001, 1] * detune * lp 100 1 x) pink
 
-        where 
-            env      :: Sig
-            env      = xeg 0.1 0.8 2 0.2
+stereoWidth :: Sig -> (Sig, Sig) -> (Sig, Sig)
+stereoWidth amt (left, right) =
+    (amt * left + mid * (1 - amt), amt * right + mid * (1 - amt))
+      where
+        mid = left + right
 
-            filter   :: Sig -> Sig
-            filter   = lp ( lfo 
-                          + 200.0 
-                          + linsegr [400.0, 0.4, 250, 1.2, 220] 0.2 100.0
-                          ) 1.0
+test :: SE (Sig, Sig)
+test = 
+    fmap (stereoWidth 0.8) $ uniOsc (\x -> osc (x + 400 * osc (2 + 0.9 * osc 0.3 * osc 0.183) * (saw (x * 4) + tri (x * 3)))) 0.9 4 440 -- [220,1,220,1,440,1,440,1,220]
 
-            sosc      :: D -> Sig
-            sosc x    = sum $ map (\y -> saw (sig x + y)) (map (sig.double) [-2.0..2.0])
-
-            lfo      :: Sig
-            lfo      = osc (7 + linseg [1.0, 2.0, 0.0, 3.0, 0.1]) * 10 + 100
-    
-
-mel1 :: Sco D
-mel1 = mel $ map temp (map (*440) [1/2,2/3,3/4,4/5,5/6,6/7,7/8,8/9,9/10])
-
-score1 :: Sco (Mix Sig)
-score1 = sco bass1 mel1
-
-mix1 :: Sig
-mix1 = mix score1
+-- line :: Sig 
+-- line = linseg mmel
+-- 
+-- mmel :: [D]
+-- mmel = melody 
+--        (map (* 0.5) [1/4, 1/4, 1/2, 3/8, 3/8, 1/4]) 
+--        (map (* 50) [1, 2/3, 4/3, 5/3, 5/2, 3/5])
+--           where
+--             melody [] [] = []
+--             melody (x:xs) (y:ys) =
+--               [y, x, y, 0.001] ++ melody xs ys
