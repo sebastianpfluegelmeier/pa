@@ -2,12 +2,14 @@ module Lib
     ( uniOsc
     , stereoWidth
     , liftToSESigs
+    , applyGroove
+    , groove
     ) where
 import Csound.Base
 import Data.List (intersperse)
 
 
--- TODO: solve :
+-- TODO: solve : phase problem
 uniOsc :: (Sig -> Sig) -> Sig -> Int -> Sig -> SE (Sig, Sig)
 
 uniOsc iosc detune voicesNum freq = 
@@ -48,3 +50,26 @@ stereoWidth amt (left, right) =
 
 liftToSESigs :: (Sig -> Sig) -> SE (Sig, Sig) -> SE (Sig, Sig)
 liftToSESigs fn = fmap (\(x, y) -> (fn x, fn y))
+
+applyGroove :: Sco a -> Sco b -> Sco b
+applyGroove groove score =
+    har $ zipWith 
+        (\(start, length) content -> 
+            singleEvent start length content)
+        grooveTime 
+        scoreContent
+      where 
+        grooveTime = fmap (\x -> (eventStart x, eventDur x)) renderedGroove
+        renderedGroove = render groove
+        scoreContent = fmap eventContent renderedScore
+        renderedScore = render score
+
+groove :: [Double] -> Sco ()
+groove nList =
+    mel $ fmap note nList
+      where 
+        note :: Double -> Sco ()
+        note x = if x > 0 then
+                   str (double x) $ temp ()
+                 else
+                   rest (double (-x))
