@@ -11,15 +11,18 @@ import Data.List (intersperse)
 uniOsc :: (Sig -> Sig) -> Sig -> Int -> Sig -> SE (Sig, Sig)
 
 uniOsc iosc detune voicesNum freq = 
-    fmap spread (sequence voices)
+    seed 4 >> fmap spread (sequence voices) 
       where
         voices :: [SE Sig]
         voices = replicate voicesNum voice
 
         voice :: SE Sig
-        voice = fmap (\x -> 
-                        iosc $ freq + 
-                               detune * lp (linseg [1000, 0.0001, 0.4]) 0.2 x) pink
+        voice = (\x y-> 
+                    iosc $ freq 
+                         -- + 10000 * y * linseg [1 , 0.01, 0]
+                         + lp 1 0.5 x)
+                <$> randomi (-detune) detune 1000
+                <*> randomi (-detune) detune 2 
 
         spread :: [Sig] -> (Sig, Sig)
         spread x = 

@@ -1,5 +1,6 @@
 module Patches
 ( bass1
+--, fmu
 ) where
 import Csound.Base
 import Lib
@@ -7,17 +8,27 @@ import Lib
 
 bass1 :: D -> SE (Sig, Sig)
 bass1 freq = 
-    liftToSESigs (sub +) overtones
+    uniOsc (\x -> lp (fenv * 10000) (sig 0.4) $ saw x) (sig 8) 8 (sig freq)
       where
-        sub       = env * (osc $ sig freq)
-        env       = leg 0.001 0.4 0.8 0.1
-        overtones :: SE (Sig, Sig)
-        overtones = liftToSESigs (\x -> otFilter $ otDist $ otEnv * x) $ uniOsc otOsc 2 6 (sig freq)
-        otFilter  = lp (0.2 * (sig freq) + otFEnv) 3.1
-        otOsc     = saw
-        otDist    = (\x -> x)
-        otEnv     = leg 0.001 0.2 0.1 0.2
-        otFEnv    = xeg 0.001 0.6 0.1 0.2
+        fenv       = xeg 0.001 0.4 0.2 0.01
+
+{-
 
 
+fmu :: D -> D -> D -> D -> D -> D -> D -> SE (Sig, Sig)
+fmu coarse cNoise amp aNoise attack decay freq =
+    (\x y -> (x, y)) <$> side <*> side
+      where
+        side :: SE Sig
+        side = (\x y -> 
+                   leg attack decay 0 decay 
+                 * (amp + (aNoise * x))
+                 * osc (freq * coarse + y * cNoise)
+               ) 
+               <$> noise 
+               <*> noise
 
+        noise :: SE Sig
+        noise = fmap (lp 1 1) white
+
+-}    
