@@ -1,90 +1,158 @@
 module Tracks
 ( track1
-, track2
+, bd
+, sn 
+, h1
+, h2
+, ho
+, p1
+, p2
+, p3
+, sh
+, cr
+, unGrooved1
+, groove1
+, groove2
+, grooved1
+, grooved2
+, grooved3
+, grooved4
+, shgroove
+, mixGroove1
+, padSynth
 )
 where 
 import Csound.Base
 import Csound.Sam   
 import Lib
-import Scores
-import Patches
 
-track1 :: (Sig, Sig)
-track1 = mix $ har [sco phatFM (applyGroove (str 0.4 groove1) score1),
-                    sco bass1 (applyGroove (str 0.4 groove2) score2)]
+track1 :: SE Sig2
+track1 = return $ toStereo $ sig 0
 
+-- ### Drum Samples ###
 
-samDir x = "/home/sebastian/samples/" ++ x
-drumsDir x = "/home/sebastian/samples/drums_and_single_hits/" ++ x
+sn :: D -> SE Sig2
+sn _ = loadSam "drums_and_single_hits/snares/metal-sd3.wav"
 
-track2 = mix $ loopBy 4 $ str 0.6 $ 
-           har [ sco kick kickGroove
-               , sco snare snareGroove
-               ]
-
-kickGroove :: Sco D
-kickGroove = applyGroove (groove [7/4, 1/4, 3/2, 1/2]) (loopBy 4 $ temp 1)
-snareGroove :: Sco D
-snareGroove = applyGroove (groove [-1, 1, -1, 1])       (loopBy 4 $ temp 1)
-
-
-kick  :: D -> SE (Sig2)
-kick  _ = runSam 1 $ wav1 $ drumsDir "kicks/808bd2.aif"
-
-snare :: D -> SE (Sig2)
-snare _ = runSam 1 $ wav1 $ drumsDir "snares/acoustic_snare.aif"
-
-hh :: D -> SE Sig2
-hh    _ = runSam 1 $ wav1 $ drumsDir "hat"
-
-temp3 :: SE (Sig, Sig)
-temp3 = uniOsc myOsc 
-            (linseg [0.4, riser2Length / 2, 10, riser2Length / 2, 102])
-            16 
-            (expseg [baseFreq, riser2Length, baseFreq * 8])
-
-          where
-            myOsc x = uosc (expseg [0.4, riser2Length, 100]) *
-                      uosc (expseg [1000, riser2Length, 0.1]) *
-                      (mlp ((x**1.1) * 2.9) 0.3 $ 
-                        osc (x + linseg [0.2, riser2Length, 1.1] * 
-                        (100 * (osc2 x) + 40* (osc3 x ))))
-            osc2 x = tri (x * 3) * uosc 4
-            osc3 x = osc (x * 2) + 0.03 * saw (x * 10) * uosc 5
-
-riser2Length = 30.72 / 2
-
-baseFreq = 41.20
-riserLength = 30.72
-fade = fadeIn riserLength
-
-temp2 :: SE (Sig, Sig)
-temp2 = 
-    return $
-    (\(l, r) -> (fx l, fx r)) (rise1 baseFreq, rise1 (baseFreq * 1.1))
+bd :: D -> SE Sig2
+bd _ = 
+    (+) <$> fadeInOut 0.2 4 kick1 <*> fadeInOut 0.001 0.3 kick2
       where
-        rise1 :: D -> Sig
-        rise1 x = osc1 (linseg [x, riserLength, x * 16]) (linseg [x * 8, riserLength, x * 2])
+        fadeInOut in_ out = (fmap (toStereoFX (\x -> 1 * x * fadeIn in_ * fadeOut out)))
+        kick1 = loadSam1 "drums_and_single_hits/kicks/giant-afro-kick1.wav"
+        kick2 = loadSam1 "drums_and_single_hits/kicks/gorgeous-kick.wav"
 
-        osc1 :: Sig -> Sig -> Sig
-        osc1 x y = osc x * 
-                 saw (x) * saw (x + osc (3 + 10 * fade)) + 
-                 osc (x * 1.014) * 
-                 osc (x * 0.9356) * 
-                 lp (x * 3 + y * uosc 2) 0.4 (saw (y * 2.5))
+h1 :: D -> SE Sig2
+h1 _ = fmap (toStereoFX (* 0.7)) $ loadSam1 "drums_and_single_hits/hats/clear-hat.wav"
 
-        fx :: Sig -> Sig
-        fx x = hp (100 + (expseg [0.4, riserLength, 2])  * 2000) 0.8 x
+h2 :: D -> SE Sig2
+h2 _ = fmap (toStereoFX (* 0.5)) $ loadSam1 "drums_and_single_hits/hats/chh.wav"
 
-temp1 :: SE (Sig, Sig)
-temp1 = fmap (\x -> (toStereo sub + x) * 0.3 * toStereo aenv) overtones
-    where 
-      sub = osc (sig baseFreq)
+ho :: D -> SE Sig2
+ho _ = fmap (toStereoFX (* 0.7)) $ loadSam1 "drums_and_single_hits/hats/bigopenhh.wav"
 
-      overtones = uniOsc ((mlp fenv 0.4).(distortion 3).(ring *).osc1) (30 * fadeIn 0.2) 32 (sig baseFreq)
+p1 :: D -> SE Sig2
+p1 _ = fmap (toStereoFX (* 0.7)) $ loadSam1 "drums_and_single_hits/tabla/tabla5.aif"
 
-      osc1 = (mlp fenv 0.2).osc.(\x -> x + 1000 * aenv * osc (10 * x) * saw (4.01 * x))
-      fenv = expseg [20000, 0.1, 5000, 0.1, 400, 0.1, 100]
-      aenv = expseg [1, 0.2, 0.8, 0.15, 0.2, 0.1, 0.0001]
-      ring :: Sig
-      ring = 1 + 0.1 * (usaw (sig baseFreq) * 0.8) * fadeOut 1
+p2 :: D -> SE Sig2
+p2 _ = fmap (toStereoFX (* 0.7)) $ loadSam1 "drums_and_single_hits/tabla/dhi.aif"
+
+p3 :: D -> SE Sig2
+p3 _ = fmap (toStereoFX (* 0.7)) $ loadSam1 "drums_and_single_hits/japanese/shime_hi_2.aif"
+
+sh :: D -> SE Sig2
+sh x = fmap (toStereoFX (* (sig x * 0.6))) $ loadSam1 
+           "drums_and_single_hits/percussion_western_and_latin/maraca.aif"
+
+cr :: D -> SE Sig2
+cr _ = fmap (toStereoFX (* 0.2)) $ loadSam1 
+           "drums_and_single_hits/crashes/muted_crash.aif"
+
+crash :: Sco (Mix (Sig2))
+crash = str 0.11 $ sco cr (temp 0)
+
+shgroove :: Sco (Mix (Sig2))
+shgroove = str 0.11 $ mel $ fmap (\x -> sco sh (temp x)) [1, 0.3,0.6, 0.4]
+
+groove1 :: Sco ()
+groove1 = str 0.11 $ groove [3, 1, 2, 1, 1, 2, 2, 1, 2, 1]
+groove2 = str 0.11 $ groove [1, 3, 2, 1, 1, 2, 2, 1, 2, 1]
+
+unGrooved1 = mel $ fmap (\x -> sco x $ temp $ double 1) $ [bd, h1, sn, ho, bd, p2, h2, sn, h1, p3]
+unGrooved2 = mel $ fmap (\x -> sco x $ temp $ double 1) $ [bd, ho, sn, h2, h1, h2, bd, sn, p3, h1]
+
+grooved1 = applyGroove groove1 unGrooved1
+grooved2 = applyGroove groove2 unGrooved1
+grooved3 = applyGroove groove1 unGrooved2
+grooved4 = applyGroove groove2 unGrooved2
+
+mixGroove1 = 
+    mix $ 
+        loopBy 2 $ 
+            har 
+                [ loopBy 32 shgroove
+                , loopBy 2  $ str 64 $ crash
+                , mel 
+                    [ grooved1
+                    , grooved2
+                    , grooved1
+                    , grooved3
+                    , grooved2
+                    , grooved3
+                    , grooved2
+                    , grooved4
+                    ]
+                ]
+
+padSynth :: D -> SE Sig2
+padSynth freq =
+    (\(xl, xr) (yl, yr) -> 
+        ((filter $ env1 * xl + env2 * yl), 
+         (filter $ env1 * yr + env2 * xr)
+        )
+    ) <$> 
+    uniOsc osc1 (sig 50) 3 (sig freq) <*> 
+    uniOsc osc2 (70 * env1) 3 (sig freq)
+      where
+        env1 :: Sig
+        env1 = fadeIn (0.1 + decay / 10) * fOut (decay * 1.4)
+        env2 :: Sig
+        env2 = fOut decay
+        osc1 :: Sig -> Sig
+        osc1 x = mlp ((4 + env1 * 2 * (0.5 + uosc 2 * 100) ) * x) 1.9 
+                   (osc (x + 10000 * sqr (4.1 * x))) + 
+               osc (x + 100 * env2 * osc (x * 4))
+        osc2 :: Sig -> Sig
+        osc2 x = oscBy (sines [1, 0.2, 1.5, 0.1, 1.8, 0.4, 0.2, 0.1, 0.1, 1.01]) x
+        filter :: Sig -> Sig
+        filter = lp (sig freq * 2 * (1 + 2 * env1 * uosc (1 + 8 * env2))) 1.4
+        fOut :: D -> Sig
+        fOut x = linseg [1, x, 0]
+        decay = 5
+
+-- padScore :: Sco D
+
+{-
+padScore = fmap (fmap cpspch) $
+                            [ [ 3.00
+                              , 3.03
+                              , 3.10
+                              , 4.02
+                              ]
+                            , [ 3.05
+                              , 3.08
+                              , 3.12
+                              , 4.07
+                              ]
+                            , [ 2.10
+                              , 3.01
+                              , 3.05
+                              , 3.12
+                              ]
+                            , [ 3.05
+                              , 3.08
+                              , 3.12
+                              , 4.07
+                              ]
+                            ]
+                            -}
