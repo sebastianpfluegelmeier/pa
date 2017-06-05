@@ -23,6 +23,8 @@ module Lib
     , groove
     , loadSam
     , loadSam1
+    , parallel
+    , wiggle
     ) where
 import Csound.Base
 import Csound.Sam
@@ -115,6 +117,9 @@ liftToStereoFX :: (Applicative f) => (a -> b) -> f a -> f (b, b)
 liftToStereoFX fn val = collectTupleA (fmap fn val, fmap fn val)
 
 -- ################    audio functions     ################
+parallel :: Num b => [(a -> b)] -> a -> b
+parallel processors input =
+    foldr1 (+) $ fmap (\x -> x input) processors
 
 -- TODO: solve : phase problem
 uniOsc :: (Sig -> Sig) -> Sig -> Int -> Sig -> SE (Sig, Sig)
@@ -212,3 +217,10 @@ loadSam1 directory =
       where 
         samDir = "/home/sebastian/samples/" ++ directory
 
+-- ################  Audio Atoms  ################
+
+wiggle :: Sig -> (Sig, Sig)
+wiggle freq = 
+    (side 1, side (-1))
+      where
+        side polarity = saw freq >>> blp (2 * freq + freq * polarity * osc (log freq / 2))
