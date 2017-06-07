@@ -27,6 +27,7 @@ module Lib
 import Csound.Base
 import Csound.Sam
 import Data.List (intersperse)
+import Data.String
 
 -- ################  conversion operators ################
 
@@ -177,26 +178,6 @@ groove nList =
                    str (double x) $ temp ()
                  else
                    rest (double (-x))
-
-{- a function to create scores easily
- - you can write notes in the form "c d d# e"
- - it creates a score with a whole note c, a whole note d, a whole note d# etc.
- - you can also write notes in the form "#1/4 c d $1/2 d# e"
- - it creaes a score with a quarter note c and d, then a half note d# and then a quarter note e"
- - the #length sets the note length for all folowing notes
- - the $length sets the length for one following note
- - you can write a pause with "_" 
- - you can set the octave with ''' or '3 and ,,, or ,3 and $,3 for a single note
-sc :: [Char] -> Sco D
-sc string = sc' 0
-  where
-    sc' :: Int -> Double -> [Char] -> Sco D
-    sc' _ _ [] = rest 0
-    sc' octave length string = 
-        |isNote $ firstToken string =
-            mix [note, sc' octave length ()]
- -}
-
 
 -- ################  Sampler Fucntions  ################
 
